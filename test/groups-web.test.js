@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { openDb } from '../lib/db.js';
 import { signBody } from '../lib/line.js';
 import { handleWebhook, chatOf, stripSelfMention } from '../lib/webhook.js';
-import { handleApi, createLimiter } from '../lib/webapi.js';
+import { handleApi, createLimiter, clientIp } from '../lib/webapi.js';
 import { runAlerts } from '../lib/alerts.js';
 import { parseCommand } from '../lib/commands.js';
 
@@ -188,4 +188,17 @@ test('tap-to-link: with a public URL the bot sends a one-tap link that opens in 
   assert.equal((await api(db, { method: 'POST', path: '/api/link', body: { code: m[1] } })).status, 200);
   const noUrl = await handleText({ userId: 'U1', text: 'link', db, catalog: CAT, snapshot: SNAP, now: NOW });
   assert.match(noUrl, /Website code: \d{6}/);                              // falls back to the code
+});
+
+test('clientIp: trusts the proxy header only from loopback', () => {
+  // behind Caddy / the tunnel: the proxy's header names the visitor
+  assert.equal(clientIp({ 'x-forwarded-for': '203.0.113.9' }, '127.0.0.1', 'x-forwarded-for'), '203.0.113.9');
+  assert.equal(clientIp({ 'x-forwarded-for': '203.0.113.9, 10.0.0.1' }, '::1', 'x-forwarded-for'), '203.0.113.9');
+  assert.equal(clientIp({ 'cf-connecting-ip': '198.51.100.7' }, '::ffff:127.0.0.1'), '198.51.100.7');
+  // straight from the internet: a header is just something the visitor typed — ignore it
+  assert.equal(clientIp({ 'x-forwarded-for': '1.2.3.4' }, '203.0.113.50', 'x-forwarded-for'), '203.0.113.50');
+  assert.equal(clientIp({ 'cf-connecting-ip': '1.2.3.4' }, '203.0.113.50'), '203.0.113.50');
+  // loopback but no header (local testing): fall back to the socket address
+  assert.equal(clientIp({}, '127.0.0.1', 'x-forwarded-for'), '127.0.0.1');
+  assert.equal(clientIp({}, undefined), '?');
 });

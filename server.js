@@ -15,12 +15,14 @@ import { createLineClient } from './lib/line.js';
 import { handleWebhook } from './lib/webhook.js';
 import { runAlerts } from './lib/alerts.js';
 import { updateHealth, runSelfCheck, maybeDailySelfCheck } from './lib/health.js';
-import { handleApi, createLimiter } from './lib/webapi.js';
+import { handleApi, createLimiter, clientIp } from './lib/webapi.js';
 import { menu } from './lib/menu.js';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PUBLIC = join(HERE, 'public');
 const PORT = process.env.PORT || 3000;
+// which header our local proxy puts the visitor's IP in: Cloudflare tunnel / Caddy (server)
+const PROXY_IP_HEADER = (process.env.PROXY_IP_HEADER || 'cf-connecting-ip').toLowerCase();
 const POLL_EVERY_MS = 5 * 60 * 1000;
 
 // LINE bot: secrets from .env (never committed). No token = dry-run into data/outbox.log.
@@ -110,8 +112,8 @@ const server = createServer(async (req, res) => {
       catch { return sendJson(res, { error: 'Bad request' }, 400); }
     }
     const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '') || null;
-    // behind the Cloudflare tunnel every request comes from localhost; the real visitor is in this header
-    const ip = req.headers['cf-connecting-ip'] || req.socket.remoteAddress || '?';
+    // behind the tunnel / Caddy every request comes from localhost; the proxy says who it really is
+    const ip = clientIp(req.headers, req.socket.remoteAddress, PROXY_IP_HEADER);
     const r = await handleApi({ method: req.method, path: url.pathname, body, token, ip, db, catalog: CATALOG, snapshot, limiter, config: WEB_CONFIG });
     return sendJson(res, r.body, r.status);
   }

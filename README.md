@@ -124,6 +124,18 @@ data/snapshot.json latest poll (regenerated; safe to delete)
   Google/LINE/email login → self-check. Lists many BKK courts. (Simoorgh.)
 - Phone / LINE only (no system) → self-check. (CV Sport, Beat's LINE, etc.)
 
+## Always-on server (Oracle Cloud Always Free)
+One Ubuntu VM (free shape E2.1.Micro or A1), Caddy for HTTPS, systemd keeps it running.
+1. Create the VM (Singapore, Always Free shape, public IPv4, your SSH key); in its subnet's
+   security list allow TCP 80 + 443 from 0.0.0.0/0.
+2. Hostname without buying a domain: `<ip-with-dashes>.sslip.io` (e.g. `129-150-1-2.sslip.io`).
+3. On the VM: `curl -fsSLO https://raw.githubusercontent.com/FranceFlapjack/wannatennis/main/deploy/oracle-setup.sh && bash oracle-setup.sh <hostname>`
+4. Stop the Mac copy, then copy `.env` and `data/app.db` to `/opt/wannatennis/` (owner
+   `wannatennis`, `.env` mode 600) and `sudo systemctl restart wannatennis`.
+5. LINE webhook → `https://<hostname>/line/webhook`, Verify. Logs: `journalctl -u wannatennis -f`.
+Update later: rerun step 3 (it pulls the latest code and restarts).
+**Only one copy may run** — two bots would push every alert twice.
+
 ## Roadmap
 1. **Now:** website on GitHub Pages for friends; bot runs on the Mac while it's awake.
 2. **Always-on bot:** deploy `server.js` to Fly.io (`Dockerfile` + `fly.toml` are ready;
