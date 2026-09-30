@@ -206,8 +206,6 @@ function wireControls() {
 
 (async function main() {
   wireControls();
-  // "Just freed" needs checks a few minutes apart; the static site's are ~15+ min apart
-  if (STATIC) $('#freshBtn').style.display = 'none';
   state.venues = await getVenues();
   await loadState();
   initMap();

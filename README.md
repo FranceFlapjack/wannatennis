@@ -34,10 +34,9 @@ The server polls every venue on startup and then every 5 minutes.
 Force a one-off refresh: `node lib/poll.js`
 
 ## What works today
-- **Live** (auto-checked): Hatch Tennis Club, BEAT Discovery, G.O.A.T. 57
+- **Live** (auto-checked): Hatch Tennis Club, BEAT Discovery, G.O.A.T. 57, Rujiseri
 - **Self-check** (login/phone-walled, gray cards + booking link / LINE / phone):
-  Ace of Clubs, ALM x Impact, Crystal Sports, Crystal Sports G, CV Sport Club,
-  Simoorgh Tennis Academy
+  Ace of Clubs, ALM x Impact, Crystal Sports, Crystal Sports G, CV Sport Club
 - Date tabs (next 7 days, Bangkok time), Thai labels
 - **Duration filter — 1 / 2 / 3 hr** consecutive on the *same court* (a filter, not a rule)
 - **🔔 เพิ่งว่าง (just-freed) detection** — the poller diffs each run against the previous

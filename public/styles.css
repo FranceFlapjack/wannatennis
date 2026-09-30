@@ -69,7 +69,8 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 40px; }
 /* filters */
 /* filters fill the column edge to edge, on a 6-column grid:
    desktop  [ hours ×3 | court type ×3 ]  [ just freed ×2 | near me ×2 | hide empty ×2 ]
-   phone    [ hours ×6 ] [ court type ×6 ] [ just freed ×3 | near me ×3 ] [ hide empty ×6 ] */
+   phone    [ hours ×6 ] [ court type ×6 ] [ just freed ×3 | near me ×3 ] [ hide empty ×6 ]
+   (static site: no just freed — see below) */
 .filter-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin-top: 6px; }
 #duration, #place { grid-column: span 3; }
 #freshBtn, #nearBtn, .filter-row .chk { grid-column: span 2; }
@@ -90,6 +91,13 @@ main { max-width: 720px; margin: 0 auto; padding: 0 16px 40px; }
   .date { padding: 7px 0; border-radius: 10px; }
   #duration, #place, .filter-row .chk { grid-column: span 6; }
   #freshBtn, #nearBtn { grid-column: span 3; }
+}
+/* static site (GitHub Pages): no "Just freed" (checks too far apart), so the other two
+   share the row — half each on desktop, full width each on a phone */
+[data-mode="static"] #freshBtn { display: none; }
+[data-mode="static"] #nearBtn, [data-mode="static"] .filter-row .chk { grid-column: span 3; }
+@media (max-width: 560px) {
+  [data-mode="static"] #nearBtn, [data-mode="static"] .filter-row .chk { grid-column: span 6; }
 }
 .toggle.on { border-color: var(--ball-edge); background: var(--ball-soft); color: var(--ball-ink); font-weight: 700; }
 #nearBtn.on { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }

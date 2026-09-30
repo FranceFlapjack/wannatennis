@@ -149,18 +149,4 @@ export const CATALOG = [
     note: '2 indoor + 4 outdoor. Booking by phone/LINE only — self-check.',
     source: { type: 'manual' },
   },
-  {
-    id: 'simoorgh',
-    name: 'Simoorgh Tennis Academy',
-    nameTh: 'Simoorgh Tennis Academy',
-    aliases: ['simoorgh', 'ซีมอร์ก', 'ซีมอร์'],
-    area: 'Sukhumvit 56 / Bang Chak', areaTh: 'สุขุมวิท 56 / บางจาก',
-    indoor: false,
-    lat: 13.6993768, lng: 100.5995543, coordsApprox: false,
-    bookingUrl: 'https://getoncourt.app/en/courts/simoorgh-tennis-academy',
-    lineUrl: 'https://line.me/ti/p/~jalalfathi',
-    phone: '02-311-3842',
-    note: '4 outdoor courts. On OnCourt (login to book) / phone / LINE — self-check.',
-    source: { type: 'manual' },
-  },
 ];
