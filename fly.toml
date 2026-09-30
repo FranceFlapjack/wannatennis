@@ -1,0 +1,31 @@
+# Fly.io — deploy with:  fly deploy   (from this folder)
+app = "wanna-tennis"
+primary_region = "sin"            # Singapore: closest to Bangkok
+
+[build]
+
+[env]
+  PORT = "3000"
+
+[http_service]
+  internal_port = 3000
+  force_https = true
+  auto_stop_machines = "off"      # must stay awake: it polls venues every 5 min and pushes alerts
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    method = "GET"
+    path = "/api/config"
+    interval = "30s"
+    timeout = "5s"
+    grace_period = "20s"
+
+# the alerts database + latest snapshot survive deploys and restarts
+[mounts]
+  source = "wt_data"
+  destination = "/app/data"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"

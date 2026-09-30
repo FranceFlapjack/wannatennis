@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Wanna Tennis ? — Find Courts Near You</title>
+  <meta name="theme-color" content="#17432c" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,500..700,0..100,0..1;1,9..144,500..700,0..100,0..1&family=DM+Sans:opsz,wght@9..40,400..700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="court" aria-hidden="true"></div>
+  <header class="masthead">
+    <div class="top">
+      <h1 class="brand">Wanna Tennis <span class="q">?</span></h1>
+      <p class="sub">Find Courts Near You</p>
+    </div>
+  </header>
+
+  <main>
+    <section class="controls" aria-label="Filters">
+      <div class="dates" id="dates" role="tablist" aria-label="Choose a day"></div>
+
+      <div class="filter-row">
+        <div class="seg" id="duration" role="group" aria-label="Consecutive hours">
+          <button data-h="1" class="on">1 hr</button>
+          <button data-h="2">2 hrs</button>
+          <button data-h="3">3 hrs</button>
+        </div>
+
+        <div class="seg" id="place" role="group" aria-label="Court type">
+          <button data-p="all" class="on">All</button>
+          <button data-p="indoor">Indoor</button>
+          <button data-p="outdoor">Outdoor</button>
+        </div>
+
+        <button id="freshBtn" class="toggle" aria-pressed="false">🔔 Just freed</button>
+        <button id="nearBtn" class="toggle" aria-pressed="false">📍 Near me</button>
+        <label class="chk"><input type="checkbox" id="hideEmpty" /> Hide venues with no slots</label>
+      </div>
+    </section>
+
+    <details class="mapwrap alertswrap" id="alertswrap">
+      <summary><svg class="line-ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#06C755"/><path fill="#fff" d="M12 5.3c-4.2 0-7.6 2.7-7.6 6 0 3 2.7 5.5 6.4 5.9.3.1.5.3.4.7l-.2 1.1c0 .3.2.5.5.3 2-1.2 5.4-3.6 6.9-5.4.8-.9 1.2-1.9 1.2-2.6 0-3.3-3.4-6-7.6-6z"/></svg> LINE alerts</summary>
+      <div id="alerts-body"></div>
+    </details>
+
+    <p class="meta" id="meta"></p>
+    <section id="list" class="list"></section>
+
+    <details class="mapwrap" id="mapwrap">
+      <summary>📍 Map</summary>
+      <p class="note-approx">📍 Some pins are approximate — double-check before relying on distances</p>
+      <div id="map"></div>
+    </details>
+  </main>
+
+  <footer class="foot">
+    <span id="stamp"></span>
+  </footer>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js" type="module"></script>
+  <script src="court.js" type="module"></script>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+  <script src="alerts.js" type="module"></script>
+</body>
+</html>

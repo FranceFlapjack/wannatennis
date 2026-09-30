@@ -1,0 +1,12 @@
+# secrets — never commit (the example file is fine)
+.env
+.env.*
+!.env.example
+# runtime data: alerts database (LINE user ids), snapshots, outbox
+data/
+*.db
+*.db-*
+# builds
+dist/
+node_modules/
+.DS_Store

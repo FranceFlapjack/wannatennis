@@ -1,0 +1,166 @@
+// The venue catalog. This is the ONLY file you edit to add a court.
+//   source.type 'hatch' | 'okrabook'  -> app checks availability live
+//   source.type 'manual'              -> gray card + self-check link (no public feed)
+// Adding a court on a platform we already support = one entry, no new code.
+// bookingUrlForDate (optional): a link template with {date} for venues whose booking
+// page accepts the day in the URL; otherwise time slots open bookingUrl.
+//
+// Coordinates were checked against Google Maps on 2026-09-26. Only ALM is still
+// coordsApprox: Google resolves it to "IMPACT Tennis Academy" on the same grounds.
+
+export const CATALOG = [
+  {
+    id: 'hatch',
+    name: 'Hatch Tennis Club',
+    nameTh: 'Hatch Tennis Club',
+    aliases: ['hatch', 'แฮทช์'],
+    area: 'Rat Burana', areaTh: 'ราษฎร์บูรณะ',
+    indoor: true,
+    // Verified from Google Maps: 486 Rat Burana Rd, Bang Pakok, Rat Burana, Bangkok 10140
+    lat: 13.6897725, lng: 100.4892498, coordsApprox: false,
+    bookingUrl: 'https://hatchtennisclub.com/courts',
+    phone: '095-990-4151',
+    note: '3 ITF indoor courts. Booking uses LINE login; viewing is open.',
+    // Verified against their own booking page — the daily self-check alerts if this changes.
+    expectCourts: ['Court 1', 'Court 2', 'Court 3'],
+    source: { type: 'hatch', base: 'https://hatchtennisclub.com' },
+  },
+  {
+    id: 'beat',
+    name: 'BEAT Discovery',
+    nameTh: 'BEAT Discovery',
+    aliases: ['beat', 'บีท', 'บีทดิสคัฟเวอรี'],
+    area: 'Udomsuk (Sukhumvit 66/1)', areaTh: 'อุดมสุข (สุขุมวิท 66/1)',
+    indoor: true,
+    lat: 13.6797783, lng: 100.6084052, coordsApprox: false,
+    bookingUrl: 'https://beatdiscovery.okrabook.com/venues/detail/BEAT%20Discovery',
+    lineUrl: 'https://line.me/R/ti/p/~beatdiscovery',
+    phone: null,
+    note: 'Tennis on okrabook. Also badminton/padel/pickleball/table-tennis.',
+    // Verified against their own booking page — the daily self-check alerts if this changes.
+    expectCourts: ['Indoor Tennis Court 1', 'Indoor Tennis Court 2', 'Indoor Tennis Court 3', 'Indoor Tennis Court 4',
+      'Indoor Tennis Court 5', 'Indoor Tennis Court 6', 'Outdoor Tennis Court 11', 'Outdoor Tennis Court 12'],
+    source: {
+      type: 'okrabook',
+      base: 'https://beatdiscovery.okrabook.com',
+      detailPath: '/venues/detail/BEAT%20Discovery',
+      venueId: 1, sportId: 3, // 3 = Tennis
+    },
+  },
+  {
+    id: 'ace',
+    name: 'Ace of Clubs',
+    nameTh: 'Ace of Clubs',
+    aliases: ['ace', 'เอซ'],
+    area: 'Rama IV / Phra Khanong', areaTh: 'พระราม 4 / พระโขนง',
+    indoor: true,
+    lat: 13.7128051, lng: 100.5821503, coordsApprox: false,
+    bookingUrl: 'https://aceofclubsbkk.com/booking/',
+    phone: null,
+    note: 'Members/guest login required to see availability — self-check.',
+    source: { type: 'manual' },
+  },
+  {
+    id: 'alm',
+    name: 'ALM x Impact Tennis',
+    nameTh: 'ALM x Impact',
+    aliases: ['alm', 'impact', 'เอแอลเอ็ม', 'อิมแพ็ค'],
+    area: 'Muang Thong Thani', areaTh: 'เมืองทองธานี',
+    indoor: true,
+    lat: 13.9153463, lng: 100.5534719, coordsApprox: true,
+    bookingUrl: 'https://www.almximpact.com',
+    phone: null,
+    note: 'Phone+OTP login required to see availability — self-check.',
+    source: { type: 'manual' },
+  },
+  {
+    id: 'crystal',
+    name: 'Crystal Sports',
+    nameTh: 'Crystal Sports',
+    aliases: ['crystal', 'คริสตัล', 'คริสตัลสปอร์ต'],
+    area: 'Pradit Manutham / Lat Phrao', areaTh: 'ประดิษฐ์มนูธรรม / ลาดพร้าว',
+    indoor: true,
+    lat: 13.8100253, lng: 100.6177106, coordsApprox: false,
+    bookingUrl: 'https://crystalsports-booking.kegroup.co.th/',
+    phone: null,
+    note: 'On KE Group. Phone-number/OTP login to see availability — self-check.',
+    source: { type: 'manual' },
+  },
+  {
+    id: 'goat57',
+    name: 'G.O.A.T. 57',
+    nameTh: 'GOAT57',
+    aliases: ['goat', 'goat57', 'โกท', 'โกท57'],
+    area: 'Rama 3 / Sathupradit 57', areaTh: 'พระราม 3 / สาทุประดิษฐ์ 57',
+    indoor: true,
+    lat: 13.6799354, lng: 100.5330594, coordsApprox: false,
+    bookingUrl: 'https://goat57tennisclub.com/availability/court',
+    // Their page reads ?date= (verified), so a time slot can open the right day.
+    bookingUrlForDate: 'https://goat57tennisclub.com/availability/court?date={date}',
+    phone: null,
+    note: '4 indoor ITF courts. Availability is public — checked live.',
+    // Verified against their own booking page — the daily self-check alerts if this changes.
+    expectCourts: ['Court 1', 'Court 2', 'Court 3', 'Court 4'],
+    source: { type: 'reservationSystem', base: 'https://goat57tennisclub.com', itemType: 'court' },
+  },
+  {
+    id: 'crystalg',
+    name: 'Crystal Sports G',
+    nameTh: 'Crystal Sports G',
+    aliases: ['crystal g', 'crystalg', 'csg', 'คริสตัล จี'],
+    area: 'Palm Hills, Pradit Manutham', areaTh: 'ปาล์ม ฮิลส์ ประดิษฐ์มนูธรรม',
+    indoor: true,
+    lat: 13.7988108, lng: 100.6152233, coordsApprox: false,
+    bookingUrl: 'https://crystalsports-booking.kegroup.co.th/',
+    phone: null,
+    note: 'Newer Palm Hills branch (828 Pradit Manutham). KE Group login — self-check.',
+    source: { type: 'manual' },
+  },
+  {
+    id: 'ruji',
+    name: 'Rujiseri Tennis Courts',
+    nameTh: 'สนามเทนนิสรุจิเสรี',
+    aliases: ['ruji', 'rujiseri', 'รุจิ', 'รุจิเสรี'],
+    area: 'Phahonyothin 14 / Phaya Thai', areaTh: 'พหลโยธิน 14 / พญาไท',
+    indoor: false,
+    // Verified on Google Maps: 103 Soi Phahonyothin 14 (Rujiseri Wittaya school grounds)
+    lat: 13.7853513, lng: 100.5529878, coordsApprox: false,
+    bookingUrl: 'https://rujiseri.allbooked.com/booking?spacefeatureids=9a4f3e550d6d4e91aa5c1088985aac3f',
+    // Their calendar reads &viewdate= (verified), so a slot opens the right day.
+    bookingUrlForDate: 'https://rujiseri.allbooked.com/booking?spacefeatureids=9a4f3e550d6d4e91aa5c1088985aac3f&viewdate={date}',
+    bookBy: 'admin',
+    phone: null,
+    note: '2 outdoor courts. Availability is public (Skedda); no self-booking — book via their admin.',
+    // Verified against their own booking page — the daily self-check alerts if this changes.
+    expectCourts: ['Tennis 1', 'Tennis 2'],
+    source: { type: 'skedda', base: 'https://rujiseri.allbooked.com' },
+  },
+  {
+    id: 'cvsport',
+    name: 'CV Sport Club',
+    nameTh: 'CV Sport Club',
+    aliases: ['cv', 'cvsport', 'ซีวี'],
+    area: 'Salaya / Taweewattana', areaTh: 'ศาลายา / ทวีวัฒนา',
+    indoor: false,
+    lat: 13.7989273, lng: 100.347557, coordsApprox: false,
+    bookingUrl: 'https://www.facebook.com/cvsportclub/',
+    phone: '081-562-2622',
+    types: ['indoor', 'outdoor'],
+    note: '2 indoor + 4 outdoor. Booking by phone/LINE only — self-check.',
+    source: { type: 'manual' },
+  },
+  {
+    id: 'simoorgh',
+    name: 'Simoorgh Tennis Academy',
+    nameTh: 'Simoorgh Tennis Academy',
+    aliases: ['simoorgh', 'ซีมอร์ก', 'ซีมอร์'],
+    area: 'Sukhumvit 56 / Bang Chak', areaTh: 'สุขุมวิท 56 / บางจาก',
+    indoor: false,
+    lat: 13.6993768, lng: 100.5995543, coordsApprox: false,
+    bookingUrl: 'https://getoncourt.app/en/courts/simoorgh-tennis-academy',
+    lineUrl: 'https://line.me/ti/p/~jalalfathi',
+    phone: '02-311-3842',
+    note: '4 outdoor courts. On OnCourt (login to book) / phone / LINE — self-check.',
+    source: { type: 'manual' },
+  },
+];

@@ -1,0 +1,16 @@
+{
+  "name": "tennis-finder",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Find free tennis courts in Bangkok \u2014 live availability where venues publish it, self-check links where they don't.",
+  "scripts": {
+    "start": "node --disable-warning=ExperimentalWarning server.js",
+    "poll": "node --disable-warning=ExperimentalWarning lib/poll.js",
+    "test": "node --disable-warning=ExperimentalWarning --test",
+    "line": "node scripts/fake-line.js"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

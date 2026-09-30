@@ -1,0 +1,55 @@
+# Website on GitHub Pages: every ~15 min, check the venues and publish the static site.
+# (GitHub runs scheduled jobs late at busy times; the page shows how old its data is.)
+# The LINE bot is NOT here — it needs an always-on server (see README → Roadmap).
+name: Publish website
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - id: pages
+        uses: actions/configure-pages@v5
+      - name: Last published data (if under 15 min old, fills in a venue whose check fails)
+        run: |
+          mkdir -p data
+          curl -fsSL "${{ steps.pages.outputs.base_url }}/data/snapshot.json" -o data/snapshot.json || rm -f data/snapshot.json
+      - name: Check the venues
+        run: node --disable-warning=ExperimentalWarning lib/poll.js
+      - name: Build the static site
+        run: node scripts/build-static.js
+        env:
+          LINE_BOT_BASIC_ID: '@724ganrk'
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

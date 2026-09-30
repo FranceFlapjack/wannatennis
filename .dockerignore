@@ -1,0 +1,11 @@
+# secrets go in as Fly secrets, never into the image
+.env
+.env.*
+!.env.example
+data
+test
+scripts
+*.md
+Dockerfile
+fly.toml
+.DS_Store
