@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Wanna Tennis ? — Find Courts Near You</title>
-  <meta name="theme-color" content="#17432c" />
+  <meta name="theme-color" content="#f7f5ee" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,500..700,0..100,0..1;1,9..144,500..700,0..100,0..1&family=DM+Sans:opsz,wght@9..40,400..700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -12,8 +12,36 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="court" aria-hidden="true"></div>
+  <!-- welcome: a tennis animation plays while the data loads underneath; also replayed by pull-to-refresh (splash.js) -->
+  <div id="splash" class="splash" role="status" aria-label="Loading free courts">
+    <!-- "Isometric Tennis" by Mahmoud Morsy, LottieFiles (Lottie Simple License, free commercial use):
+         https://lottiefiles.com/free-animation/isometric-tennis-AC7D1ovX7k — hosted by LottieFiles -->
+    <dotlottie-wc id="splashAnim" class="splash-anim" src="https://assets-v2.lottiefiles.com/a/f63d8fe8-1166-11ee-95fe-2b49d86c96ea/rKq5z9PFuQ.lottie" autoplay loop aria-hidden="true"></dotlottie-wc>
+    <p class="splash-brand">Wanna Tennis <span class="q">?</span></p>
+    <p class="splash-sub">Finding free courts…</p>
+  </div>
+  <!-- pull-to-refresh: a ball that drops in from the top as you pull (phones) -->
+  <svg id="pullBall" class="pull-ball" viewBox="-12 -12 24 24" aria-hidden="true">
+    <circle r="11" fill="#d8f23c"/>
+    <path d="M-7 -8 C-2 -3 -2 3 -7 8 M7 -8 C2 -3 2 3 7 8" fill="none" stroke="#fdfde8" stroke-width="1.8" stroke-linecap="round"/>
+  </svg>
+  <!-- one line-icon set for the whole page (stroke = currentColor, see .ico) -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-6.5-5.7-6.5-11a6.5 6.5 0 0 1 13 0c0 5.3-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/></symbol>
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 16v-5a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2.2 2.2 0 0 0 4 0"/></symbol>
+    <symbol id="i-map" viewBox="0 0 24 24"><path d="M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6z"/><path d="M9 4v14M15 6v14"/></symbol>
+    <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.2"/><path d="M3 20a6 6 0 0 1 12 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 6M18 14.3A6 6 0 0 1 21 20"/></symbol>
+  </svg>
   <header class="masthead">
+    <!-- the far half of a court, to ITF proportions in metres (10.97 wide, 11.885 baseline-to-net) -->
+    <svg class="mast-court" viewBox="0 0 10.97 11.885" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <g fill="none" stroke="currentColor" stroke-width="1.5">
+        <path d="M0 0H10.97M0 0V11.885M10.97 0V11.885M1.37 0V11.885M9.6 0V11.885"/>
+        <path d="M1.37 5.485H9.6M5.485 5.485V11.885M5.485 0V.15"/>
+      </g>
+      <path d="M-1 11.86H12" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="2 4"/>
+    </svg>
     <div class="top">
       <h1 class="brand">Wanna Tennis <span class="q">?</span></h1>
       <p class="sub">Find Courts Near You</p>
@@ -21,51 +49,65 @@
   </header>
 
   <main>
+    <!-- sticky, so day + hours stay in reach. Phone: hours + a Filters button that opens a
+         bottom sheet. Wider screens: everything inline (.bar / .filters become plain grid items). -->
     <section class="controls" aria-label="Filters">
       <div class="dates" id="dates" role="tablist" aria-label="Choose a day"></div>
 
-      <div class="filter-row">
-        <div class="seg" id="duration" role="group" aria-label="Consecutive hours">
-          <button data-h="1" class="on">1 hr</button>
-          <button data-h="2">2 hrs</button>
-          <button data-h="3">3 hrs</button>
+      <div class="filter-grid">
+        <div class="bar">
+          <div class="seg" id="duration" role="group" aria-label="Play for">
+            <button data-h="1" class="on">1 hr</button>
+            <button data-h="2">2 hrs</button>
+            <button data-h="3">3 hrs</button>
+          </div>
+          <button id="filtersBtn" class="filters-btn" aria-expanded="false" aria-controls="filters"><svg class="ico" aria-hidden="true"><use href="#i-sliders"/></svg>Filters<span id="filtersCount" class="count" hidden></span></button>
         </div>
 
-        <div class="seg" id="place" role="group" aria-label="Court type">
-          <button data-p="all" class="on">All</button>
-          <button data-p="indoor">Indoor</button>
-          <button data-p="outdoor">Outdoor</button>
+        <div class="filters" id="filters">
+          <div class="sheet-head"><b>Filters</b><button id="filtersDone" class="sheet-done">Done</button></div>
+          <div class="seg" id="place" role="group" aria-label="Court type">
+            <button data-p="all" class="on">All</button>
+            <button data-p="indoor">Indoor</button>
+            <button data-p="outdoor">Outdoor</button>
+          </div>
+          <button id="freshBtn" class="toggle" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-bell"/></svg> Just freed</button>
+          <button id="nearBtn" class="toggle" aria-pressed="false"><svg class="ico" aria-hidden="true"><use href="#i-pin"/></svg> Near me</button>
+          <label class="chk"><input type="checkbox" id="hideEmpty" /> Hide venues with nothing free</label>
         </div>
-
-        <button id="freshBtn" class="toggle" aria-pressed="false">🔔 Just freed</button>
-        <button id="nearBtn" class="toggle" aria-pressed="false">📍 Near me</button>
-        <label class="chk"><input type="checkbox" id="hideEmpty" /> Hide venues with no slots</label>
       </div>
+      <!-- inside .controls: same stacking layer as the sheet, so it dims the page but not the sheet -->
+      <div id="sheetBackdrop" class="sheet-backdrop" hidden></div>
     </section>
 
+    <div class="results-head">
+      <p class="meta" id="meta"></p>
+      <span class="stamp" id="stamp"></span>
+    </div>
+    <section id="list" class="list"></section>
+
     <details class="mapwrap alertswrap" id="alertswrap">
-      <summary><svg class="line-ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#06C755"/><path fill="#fff" d="M12 5.3c-4.2 0-7.6 2.7-7.6 6 0 3 2.7 5.5 6.4 5.9.3.1.5.3.4.7l-.2 1.1c0 .3.2.5.5.3 2-1.2 5.4-3.6 6.9-5.4.8-.9 1.2-1.9 1.2-2.6 0-3.3-3.4-6-7.6-6z"/></svg> LINE alerts</summary>
+      <summary><svg class="line-ico" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="6" fill="#06C755"/><path fill="#fff" d="M12 5.3c-4.2 0-7.6 2.7-7.6 6 0 3 2.7 5.5 6.4 5.9.3.1.5.3.4.7l-.2 1.1c0 .3.2.5.5.3 2-1.2 5.4-3.6 6.9-5.4.8-.9 1.2-1.9 1.2-2.6 0-3.3-3.4-6-7.6-6z"/></svg> Get a LINE message when a court frees up</summary>
       <div id="alerts-body"></div>
     </details>
 
-    <p class="meta" id="meta"></p>
-    <section id="list" class="list"></section>
-
     <details class="mapwrap" id="mapwrap">
-      <summary>📍 Map</summary>
-      <p class="note-approx">📍 Some pins are approximate — double-check before relying on distances</p>
+      <summary><svg class="ico" aria-hidden="true"><use href="#i-map"/></svg> Map</summary>
+      <p class="note-approx">Some pins are approximate — double-check before relying on distances.</p>
       <div id="map"></div>
     </details>
   </main>
 
-  <footer class="foot">
-    <span id="stamp"></span>
-  </footer>
-
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="splash.js" type="module"></script>
   <script src="app.js" type="module"></script>
-  <script src="court.js" type="module"></script>
+  <!-- Lottie player for the welcome animation (after splash.js, so it can switch autoplay off for reduced motion first) -->
+  <script src="https://cdn.jsdelivr.net/npm/@lottiefiles/dotlottie-wc@0.10.0/+esm" type="module"></script>
   <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
   <script src="alerts.js" type="module"></script>
+  <!-- motion: optional. If these don't load (or the phone asks for reduced motion) the page works the same, just still. -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js" defer></script>
+  <script src="motion.js" type="module"></script>
 </body>
 </html>

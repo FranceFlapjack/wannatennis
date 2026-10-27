@@ -25,6 +25,9 @@ async function loadLocal() {
   return local;
 }
 
+/** Forget cached data so the next call fetches fresh (pull-to-refresh). */
+export function resetData() { local = null; }
+
 /** Venue cards (name, area, links, live or self-check). */
 export async function getVenues() {
   if (!STATIC) return json('api/venues');

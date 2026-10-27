@@ -147,6 +147,12 @@ Update later: rerun step 3 (it pulls the latest code and restarts).
 Heads-up: GitHub pauses scheduled jobs in a public repo after 60 days without commits —
 re-enable in the Actions tab (or push anything).
 
+## Credits
+- Welcome / pull-to-refresh animation: ["Isometric Tennis"](https://lottiefiles.com/free-animation/isometric-tennis-AC7D1ovX7k)
+  by Mahmoud Morsy on LottieFiles (Lottie Simple License), played with `@lottiefiles/dotlottie-wc`.
+- Motion: GSAP + ScrollTrigger (card reveals, magnet slot tiles) in `public/motion.js` — optional,
+  off for reduced motion or `?motion=0`.
+
 ## Notes / TODO
 - **Coordinates are approximate.** Fix lat/lng in catalog.js; **Hatch has none** (its site
   has no public address — ask the venue).

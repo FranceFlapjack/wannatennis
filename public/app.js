@@ -1,12 +1,17 @@
 // Frontend. Gets venue cards + filtered availability (from the server, or computed here
 // on the static site — see data.js), renders the list and a Leaflet map.
-import { STATIC, getVenues, getState } from './data.js';
+import { getVenues, getState, resetData } from './data.js';
 
 const state = window.__wt = { minHours: 1, place: 'all', hideEmpty: false, freshOnly: false, userPos: null, date: null, venues: [], data: null, map: null, markers: null, bounds: null };
 
 const $ = (s, r = document) => r.querySelector(s);
 const el = (t, cls, txt) => { const e = document.createElement(t); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
 const hhmm = (h) => String(h).padStart(2, '0') + ':00';
+// line icon from the sprite in index.html (one icon style across the page)
+const icon = (id) => {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg'); s.setAttribute('class', 'ico'); s.setAttribute('aria-hidden', 'true');
+  const u = document.createElementNS('http://www.w3.org/2000/svg', 'use'); u.setAttribute('href', `#i-${id}`); s.append(u); return s;
+};
 // Straight-line distance from the user (Near me). Infinity when off or no pin.
 function distanceKm(v) {
   if (!state.userPos || v.lat == null) return Infinity;
@@ -30,10 +35,9 @@ async function loadState() {
 function renderDates() {
   const box = $('#dates'); box.innerHTML = '';
   for (const d of state.data.dates) {
-    const b = el('div', 'date' + (d.date === state.date ? ' on' : ''));
+    const b = el('div', 'date' + (d.date === state.date ? ' on' : '') + (d.today ? ' today' : ''));
     b.setAttribute('role', 'tab');
-    b.append(el('div', 'dow', d.dow), el('div', 'day', String(d.day)), el('div', 'mon', d.mon));
-    if (d.today) b.append(el('span', 'badge', 'Today'));
+    b.append(el('div', 'dow', d.today ? 'Today' : d.dow), el('div', 'day', String(d.day)), el('div', 'mon', d.mon));
     b.onclick = () => { state.date = d.date; renderDates(); renderList(); renderMeta(); };
     box.append(b);
   }
@@ -53,94 +57,108 @@ function renderMeta() {
     const cell = day[v.id]?.byDate[state.date];
     if (v.live && cell) { liveFree += cell.starts.reduce((a, s) => a + s.courts, 0); if (cell.starts.length) liveVenues++; }
   }
-  const label = state.minHours === 1 ? 'Open slots' : `${state.minHours}-hour blocks`;
-  $('#meta').textContent = `${label} · ${liveFree} court-slots across ${liveVenues} live venue${liveVenues === 1 ? '' : 's'}`;
+  const what = state.minHours === 1 ? 'free slot' : `free ${state.minHours}-hour block`;
+  $('#meta').textContent = liveFree
+    ? `${liveFree} ${what}${liveFree === 1 ? '' : 's'} at ${liveVenues} venue${liveVenues === 1 ? '' : 's'}`
+    : `Nothing free${state.minHours > 1 ? ` for ${state.minHours} hours` : ''} on this day`;
 }
 
+const link = (cls, txt, href) => { const a = el('a', 'btn ' + cls, txt); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; };
+const dayUrl = (v) => (v.bookingUrlForDate ? v.bookingUrlForDate.replace('{date}', state.date) : v.bookingUrl);
+const placeText = (v) => { const km = distanceKm(v); return [Number.isFinite(km) ? `${km < 10 ? km.toFixed(1) : Math.round(km)} km` : '', v.area].filter(Boolean).join(' · '); };
+
+// Order: venues with free slots first as full cards (🔔 ones first, then most free; or nearest
+// first with Near me), then live venues with nothing free as one-line rows, then the
+// self-check venues (we can't see their courts) as one-line rows. Ties keep catalog order.
 function renderList() {
+  renderFilterCount();
   const list = $('#list'); list.innerHTML = '';
-
-  // Order: Near me -> nearest first. Otherwise: live venues with free slots (🔔 ones
-  // first, then most free court-slots), then live venues with nothing free / couldn't
-  // check, then self-check venues. Ties keep catalog order (sort is stable).
   const cellFor = (v) => state.data.venues[v.id]?.byDate[state.date];
-  const group = (v) => (v.live && cellFor(v)?.starts.length ? 0 : v.live ? 1 : 2);
   const freeCount = (v) => (cellFor(v)?.starts || []).reduce((a, s) => a + s.courts, 0);
-  const byDefault = (a, b) => group(a) - group(b)
-    || (cellFor(b)?.hasFresh ? 1 : 0) - (cellFor(a)?.hasFresh ? 1 : 0)
-    || freeCount(b) - freeCount(a);
-  const shown = state.venues.filter(venueVisible)
-    .sort(state.userPos ? (a, b) => distanceKm(a) - distanceKm(b) : byDefault);
+  const order = state.userPos ? (a, b) => distanceKm(a) - distanceKm(b)
+    : (a, b) => (cellFor(b)?.hasFresh ? 1 : 0) - (cellFor(a)?.hasFresh ? 1 : 0) || freeCount(b) - freeCount(a);
+  const venues = state.venues.filter(venueVisible).sort(order);
+  const hasSlots = (v) => v.live && cellFor(v)?.starts.length > 0;
+  const failed = (v) => v.live && !!cellFor(v)?.error;            // never hide or shrink a failed check
+  const open = venues.filter((v) => (hasSlots(v) || failed(v)) && (!state.freshOnly || cellFor(v)?.hasFresh));
+  const empty = state.freshOnly || state.hideEmpty ? [] : venues.filter((v) => v.live && !hasSlots(v) && !failed(v));
+  const self = state.freshOnly ? [] : venues.filter((v) => !v.live);
 
-  for (const v of shown) {
-    const cell = cellFor(v);
-    const hasSlots = v.live && cell && cell.starts.length > 0;
-    if (state.hideEmpty && v.live && !hasSlots && !cell?.error) continue; // never hide a failed check
-    if (state.freshOnly && !(v.live && cell?.hasFresh)) continue; // fresh-only hides the rest
-
-    const card = el('div', 'card' + (v.live ? '' : ' self'));
-    const head = el('div', 'card-head');
-    const left = el('div');
-    left.append(el('h2', null, v.name));
-    const tags = el('div', 'tags');
-    tags.append(el('span', 'tag ' + (v.live ? 'live' : 'self'), v.live ? '● Live' : 'Self-check'));
-    const types = v.types || [v.indoor ? 'indoor' : 'outdoor'];
-    tags.append(el('span', 'tag', types.length > 1 ? 'Indoor + Outdoor' : types[0] === 'indoor' ? 'Indoor' : 'Outdoor'));
-    left.append(tags);
-    const km = distanceKm(v);
-    const place = [Number.isFinite(km) ? `${km < 10 ? km.toFixed(1) : Math.round(km)} km` : '', v.area].filter(Boolean).join(' · ');
-    if (place) left.append(el('div', 'venue-area', place));
-    head.append(left);
-
-    // action button(s)
-    const actions = el('div', 'actions');
-    const link = (cls, txt, href) => { const a = el('a', 'btn ' + cls, txt); a.href = href; a.target = '_blank'; a.rel = 'noopener'; return a; };
-    if (v.live) {
-      actions.append(link('', v.bookBy === 'admin' ? 'Calendar ↗' : 'Book ↗', v.bookingUrl));
-    } else {
-      if (v.bookingUrl) actions.append(link('', 'Check ↗', v.bookingUrl));
-      if (v.lineUrl) actions.append(link('line', 'LINE', v.lineUrl));
-    }
-    head.append(actions);
-    card.append(head);
-
-    if (v.live && cell?.error) {
-      card.append(el('div', 'check-failed', "Couldn't check this day just now — open their page to see availability."));
-    } else if (v.live) {
-      const starts = state.freshOnly ? cell.starts.filter((s) => s.fresh) : (cell?.starts || []);
-      if (starts.length) {
-        // Each slot opens the venue's booking page — on the right day where the venue
-        // supports a date in the link (GOAT57); otherwise their page, and we say so.
-        const url = v.bookingUrlForDate ? v.bookingUrlForDate.replace('{date}', state.date) : v.bookingUrl;
-        const slots = el('div', 'slots');
-        for (const s of starts) {
-          const end = s.hour + state.minHours;
-          const chip = el('a', 'slot' + (s.fresh ? ' fresh' : ''));
-          chip.href = url; chip.target = '_blank'; chip.rel = 'noopener';
-          const time = el('span', 'slot-time');
-          if (s.fresh) time.append(el('span', 'bell', '🔔'));
-          time.append(document.createTextNode(`${hhmm(s.hour)}–${hhmm(end)}`));
-          chip.append(time, el('span', 'slot-courts', s.names.map(shortCourt).join(' · ')));
-          slots.append(chip);
-        }
-        card.append(slots);
-        if (v.bookBy === 'admin') {
-          card.append(el('div', 'slot-hint', 'No online booking here — book through their admin.'));
-        }
-      } else {
-        card.append(el('div', 'empty', 'No slots match your filters on this day'));
-      }
-    } else {
-      card.append(el('div', 'self-note', v.note || 'Login required to see availability — check on their site'));
-      if (v.phone) {
-        const p = el('div', 'phone');
-        const a = el('a', null, '📞 ' + v.phone); a.href = 'tel:' + v.phone.replace(/[^0-9+]/g, '');
-        p.append(a); card.append(p);
-      }
-    }
-    list.append(card);
+  for (const v of open) list.append(card(v, cellFor(v)));
+  if (empty.length) {
+    list.append(el('h3', 'section-label', 'Nothing free on this day'));
+    list.append(rows(empty.map((v) => [v, placeText(v), null, [link('', v.bookBy === 'admin' ? 'Calendar ↗' : 'Book ↗', dayUrl(v))]])));
+  }
+  if (self.length) {
+    list.append(el('h3', 'section-label', 'Check these yourself'));
+    list.append(rows(self.map((v) => {
+      const links = [];
+      if (v.bookingUrl) links.push(link('', 'Check ↗', v.bookingUrl));
+      if (v.lineUrl) links.push(link('line', 'LINE', v.lineUrl));
+      if (v.phone) links.push(link('', 'Call', 'tel:' + v.phone.replace(/[^0-9+]/g, '')));
+      return [v, placeText(v), v.note || 'Sign in on their site to see free courts.', links];
+    })));
   }
   if (!list.children.length) list.append(el('p', 'empty', 'No venues match your filters'));
+  document.dispatchEvent(new Event('wt:rendered'));   // motion.js animates the new list (optional)
+}
+
+// One bordered box of compact rows: [venue, detail line, note line, links]
+function rows(items) {
+  const box = el('div', 'rows');
+  for (const [v, detail, note, links] of items) {
+    const r = el('div', 'row'), text = el('div', 'row-text');
+    text.append(el('div', 'row-name', v.name));
+    if (detail) text.append(el('div', 'row-detail', detail));
+    if (note) text.append(el('div', 'row-note', note));
+    const acts = el('div', 'row-links'); acts.append(...links);
+    r.append(text, acts); box.append(r);
+  }
+  return box;
+}
+
+function card(v, cell) {
+  const c = el('div', 'card');
+  const head = el('div', 'card-head');
+  const left = el('div');
+  left.append(el('h2', null, v.name));
+  const tags = el('div', 'tags');
+  tags.append(el('span', 'tag live', '● Live'));
+  const types = v.types || [v.indoor ? 'indoor' : 'outdoor'];
+  tags.append(el('span', 'tag', types.length > 1 ? 'Indoor + Outdoor' : types[0] === 'indoor' ? 'Indoor' : 'Outdoor'));
+  left.append(tags);
+  const place = placeText(v);
+  if (place) left.append(el('div', 'venue-area', place));
+  const actions = el('div', 'actions');
+  actions.append(link('', v.bookBy === 'admin' ? 'Calendar ↗' : 'Book ↗', v.bookingUrl));
+  head.append(left, actions);
+  c.append(head);
+
+  if (cell?.error) {
+    c.append(el('div', 'check-failed', "Couldn't check this day just now — open their page to see availability."));
+    return c;
+  }
+  // Each slot opens the venue's booking page — on the right day where the venue supports it
+  const starts = state.freshOnly ? cell.starts.filter((s) => s.fresh) : cell.starts;
+  const slots = el('div', 'slots');
+  for (const s of starts) {
+    const chip = el('a', 'slot' + (s.fresh ? ' fresh' : ''));
+    chip.href = dayUrl(v); chip.target = '_blank'; chip.rel = 'noopener';
+    const time = el('span', 'slot-time');
+    if (s.fresh) time.append(icon('bell'));
+    time.append(document.createTextNode(`${hhmm(s.hour)}–${hhmm(s.hour + state.minHours)}`));
+    chip.append(time, el('span', 'slot-courts', s.names.map(shortCourt).join(' · ')));
+    slots.append(chip);
+  }
+  c.append(slots);
+  if (v.bookBy === 'admin') c.append(el('div', 'slot-hint', 'No online booking here — book through their admin.'));
+  return c;
+}
+
+// "Filters · 2" on the phone button, so hidden filters are never forgotten
+function renderFilterCount() {
+  const n = (state.place !== 'all') + !!state.userPos + state.freshOnly + state.hideEmpty;
+  const c = $('#filtersCount'); c.hidden = !n; c.textContent = n;
 }
 
 function initMap() {
@@ -178,16 +196,16 @@ function wireControls() {
   $('#hideEmpty').addEventListener('change', (e) => { state.hideEmpty = e.target.checked; renderList(); });
   $('#nearBtn').addEventListener('click', (e) => {
     const b = e.currentTarget;
-    const set = (on, label) => { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.textContent = label; };
-    if (state.userPos) { state.userPos = null; set(false, '📍 Near me'); renderList(); return; }
+    const set = (on, label) => { b.classList.toggle('on', on); b.setAttribute('aria-pressed', String(on)); b.replaceChildren(icon('pin'), ` ${label}`); };
+    if (state.userPos) { state.userPos = null; set(false, 'Near me'); renderList(); return; }
     if (!navigator.geolocation || !window.isSecureContext) {
       $('#meta').textContent = 'Near me needs a secure (https) page — it works on localhost now, and on your phone once the site is online.';
       return;
     }
-    set(false, '📍 Locating…');
+    set(false, 'Locating…');
     navigator.geolocation.getCurrentPosition(
-      (p) => { state.userPos = [p.coords.latitude, p.coords.longitude]; set(true, '📍 Nearest first'); renderList(); },
-      (err) => { set(false, '📍 Near me'); $('#meta').textContent = `Couldn't get your location (${err.message}). Showing the default order.`; },
+      (p) => { state.userPos = [p.coords.latitude, p.coords.longitude]; set(true, 'Nearest first'); renderList(); },
+      (err) => { set(false, 'Near me'); $('#meta').textContent = `Couldn't get your location (${err.message}). Showing the default order.`; },
       { enableHighAccuracy: false, timeout: 10000, maximumAge: 300000 });
   });
   $('#freshBtn').addEventListener('click', (e) => {
@@ -196,6 +214,15 @@ function wireControls() {
     e.currentTarget.setAttribute('aria-pressed', String(state.freshOnly));
     renderList();
   });
+  const sheet = $('#filters'), backdrop = $('#sheetBackdrop'), fb = $('#filtersBtn');
+  const setSheet = (open) => {
+    sheet.classList.toggle('open', open); backdrop.hidden = !open; fb.setAttribute('aria-expanded', String(open));
+    (open ? $('#filtersDone') : fb).focus();
+  };
+  fb.addEventListener('click', () => setSheet(true));
+  $('#filtersDone').addEventListener('click', () => setSheet(false));
+  backdrop.addEventListener('click', () => setSheet(false));
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && sheet.classList.contains('open')) setSheet(false); });
   $('#mapwrap').addEventListener('toggle', function () {
     if (this.open && state.map) setTimeout(() => {
       state.map.invalidateSize();
@@ -210,19 +237,22 @@ function wireControls() {
   await loadState();
   initMap();
   renderStamp();
-  if (STATIC) setInterval(renderStamp, 60_000);
+  setInterval(renderStamp, 60_000);
+  // pull-to-refresh (splash.js): fetch fresh data, redraw; 'wt:rendered' tells it we're done
+  document.addEventListener('wt:refresh', async () => {
+    resetData();
+    try { state.venues = await getVenues(); await loadState(); } finally { renderStamp(); }
+  });
 })();
 
-// "Updated 21:40". On the static site the data is refreshed every ~10–15 min by a
-// scheduled job, so say how old it is — and say it loudly when it's gone stale.
+// "Updated 12 min ago" next to the result count — amber once it's old enough to doubt
 function renderStamp() {
   const g = state.data?.generatedAt;
   if (!g) return;
-  const at = new Date(g).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', dateStyle: 'medium', timeStyle: 'short' });
   const mins = Math.max(0, Math.round((Date.now() - Date.parse(g)) / 60_000));
-  const stamp = $('#stamp');
-  if (!STATIC) { stamp.textContent = `Updated ${at}`; return; }
   const ago = mins < 1 ? 'just now' : mins < 60 ? `${mins} min ago` : `${Math.round(mins / 60)} h ago`;
-  stamp.textContent = `Courts checked ${ago} (${at}) · refreshed about every 15 min — confirm on the venue's page before you go`;
+  const stamp = $('#stamp');
+  stamp.textContent = `Updated ${ago}` + (mins > 45 ? ' · may be out of date' : '');
+  stamp.title = new Date(g).toLocaleString('en-GB', { timeZone: 'Asia/Bangkok', dateStyle: 'medium', timeStyle: 'short' });
   stamp.classList.toggle('stale', mins > 45);
 }

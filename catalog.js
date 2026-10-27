@@ -57,7 +57,7 @@ export const CATALOG = [
     lat: 13.7128051, lng: 100.5821503, coordsApprox: false,
     bookingUrl: 'https://aceofclubsbkk.com/booking/',
     phone: null,
-    note: 'Members/guest login required to see availability — self-check.',
+    note: 'Members and guests sign in on their site to see free courts.',
     source: { type: 'manual' },
   },
   {
@@ -70,7 +70,7 @@ export const CATALOG = [
     lat: 13.9153463, lng: 100.5534719, coordsApprox: true,
     bookingUrl: 'https://www.almximpact.com',
     phone: null,
-    note: 'Phone+OTP login required to see availability — self-check.',
+    note: 'Sign in with your phone number on their site to see free courts.',
     source: { type: 'manual' },
   },
   {
@@ -83,7 +83,7 @@ export const CATALOG = [
     lat: 13.8100253, lng: 100.6177106, coordsApprox: false,
     bookingUrl: 'https://crystalsports-booking.kegroup.co.th/',
     phone: null,
-    note: 'On KE Group. Phone-number/OTP login to see availability — self-check.',
+    note: 'Sign in with your phone number on their site to see free courts.',
     source: { type: 'manual' },
   },
   {
@@ -113,7 +113,7 @@ export const CATALOG = [
     lat: 13.7988108, lng: 100.6152233, coordsApprox: false,
     bookingUrl: 'https://crystalsports-booking.kegroup.co.th/',
     phone: null,
-    note: 'Newer Palm Hills branch (828 Pradit Manutham). KE Group login — self-check.',
+    note: 'Sign in with your phone number on their site to see free courts.',
     source: { type: 'manual' },
   },
   {
@@ -146,7 +146,7 @@ export const CATALOG = [
     bookingUrl: 'https://www.facebook.com/cvsportclub/',
     phone: '081-562-2622',
     types: ['indoor', 'outdoor'],
-    note: '2 indoor + 4 outdoor. Booking by phone/LINE only — self-check.',
+    note: '2 indoor + 4 outdoor courts. Book by phone or LINE.',
     source: { type: 'manual' },
   },
 ];

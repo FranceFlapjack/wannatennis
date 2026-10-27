@@ -121,7 +121,7 @@ function renderBuilder(box) {
   };
   const row = el('div', 'al-send');
   const me = el('button', 'btn al-line'); me.innerHTML = `${LINE_ICON}<span>Alert me in LINE</span>`;
-  const group = el('button', 'btn al-line', '👥 Alert my group');
+  const group = el('button', 'btn al-line'); group.innerHTML = '<svg class="ico" aria-hidden="true"><use href="#i-users"/></svg><span>Alert my group</span>';
   me.onclick = () => go('me'); group.onclick = () => go('group');
   if (!config.botBasicId) { me.disabled = true; me.title = 'Needs the bot\'s LINE ID (LINE_BOT_BASIC_ID) — set up after the LINE account exists'; }
   row.style.marginTop = '12px';
